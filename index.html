@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f6ef">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; manifest-src 'self'; worker-src 'self'; connect-src 'self'">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cozinha">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="description" content="Receitas com os ingredientes que você tem em casa.">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Cozinha do Que Tem</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+/* Layout: app de uma coluna (máx. 560px), barra de abas fixa embaixo, receita abre em painel por cima. */
+:root {
+  --bg: #f3f6ef;
+  --surface: #ffffff;
+  --surface-2: #e8eee2;
+  --ink: #17231b;
+  --muted: #5a6a5e;
+  --line: #d5dfd0;
+  --tomato: #d9442a;
+  --tomato-ink: #ffffff;
+  --herb: #2b7449;
+  --herb-soft: #dcefe2;
+  --saffron: #e9a21b;
+  --missing: #b4541f;
+  --missing-soft: #fbe7da;
+  --shadow: 0 1px 2px rgba(23,35,27,.06), 0 8px 24px rgba(23,35,27,.07);
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111914; --surface: #1a251e; --surface-2: #223027; --ink: #e9f0ea; --muted: #9fb0a3; --line: #2f3f34;
+  --tomato: #ff6a4d; --tomato-ink: #1a0d08; --herb: #6fcf95; --herb-soft: #1f3a2a; --saffron: #f2b84b;
+  --missing: #f0995f; --missing-soft: #3a2619; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #111914; --surface: #1a251e; --surface-2: #223027; --ink: #e9f0ea; --muted: #9fb0a3; --line: #2f3f34;
+  --tomato: #ff6a4d; --tomato-ink: #1a0d08; --herb: #6fcf95; --herb-soft: #1f3a2a; --saffron: #f2b84b;
+  --missing: #f0995f; --missing-soft: #3a2619; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { background: var(--bg); }
+body { padding-top: env(safe-area-inset-top, 0px); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 25; background: var(--bg); }
+body { color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--saffron); outline-offset: 2px; }
+.app { max-width: 560px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px calc(96px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 22px; }
+.view, .counter, .quick, .block, .app > * { min-width: 0; }
+.view { display: flex; flex-direction: column; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+.eyebrow { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+
+/* Topo */
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--tomato); display: grid; place-items: center; flex: none; }
+.brand-mark svg { width: 20px; height: 20px; }
+.brand-name { font-family: var(--display); font-weight: 800; font-size: 18px; }
+.hero { display: flex; flex-direction: column; gap: 10px; }
+.hero h1 { font-size: clamp(32px, 9vw, 44px); line-height: 1.02; font-weight: 800; }
+.hero h1 em { font-style: normal; color: var(--tomato); }
+.hero-home { position: relative; border-radius: 24px; overflow: hidden; padding: 58% 12px 12px; background-color: #fbf7f0; background-image: linear-gradient(rgba(217,68,42,.22) 50%, transparent 50%), linear-gradient(90deg, rgba(217,68,42,.22) 50%, transparent 50%); background-size: 5.83% 21px; box-shadow: var(--shadow); }
+.hero-art { position: absolute; top: 0; left: 0; width: 100%; height: auto; aspect-ratio: 4 / 3; display: block; }
+.hero-copy { position: relative; background: color-mix(in srgb, var(--surface) 90%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.hero-copy h1 { font-size: clamp(28px, 8vw, 40px); }
+.hero p { margin: 0; color: var(--muted); max-width: 40ch; }
+
+/* Bancada de ingredientes */
+.counter { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow); }
+.add-row { display: flex; gap: 8px; }
+.add-row input { flex: 1; min-width: 0; border: 1.5px solid var(--line); background: var(--bg); border-radius: 14px; padding: 12px 14px; font-size: 16px; }
+.add-row input:focus { border-color: var(--herb); outline: none; }
+.btn { border: 0; border-radius: 14px; padding: 12px 16px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-primary { background: var(--tomato); color: var(--tomato-ink); }
+.btn-herb { background: var(--herb); color: var(--surface); }
+.btn-ghost { background: var(--surface-2); color: var(--ink); }
+.btn:disabled { opacity: .55; cursor: default; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 8px 7px 13px; border-radius: 999px; background: var(--herb-soft); color: var(--ink); font-weight: 600; font-size: 15px; border: 0; }
+.chip .x { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: transparent; border: 0; color: var(--muted); font-size: 16px; line-height: 1; padding: 0; }
+.chip .x:hover { background: var(--surface); color: var(--ink); }
+.empty-chips { color: var(--muted); font-size: 14px; }
+.quick { display: flex; flex-direction: column; gap: 8px; }
+.quick-list { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.quick-list::-webkit-scrollbar { display: none; }
+.qchip { flex: none; padding: 6px 12px; border-radius: 999px; border: 1.5px dashed var(--line); background: transparent; font-size: 14px; font-weight: 600; color: var(--muted); }
+.qchip:hover { border-color: var(--herb); color: var(--herb); }
+.toggle { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); }
+.toggle input { width: 18px; height: 18px; accent-color: var(--herb); }
+.counter-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.linkish { background: none; border: 0; color: var(--muted); text-decoration: underline; font-size: 14px; padding: 4px 0; }
+.note { font-size: 13px; color: var(--muted); background: var(--surface-2); border-radius: 10px; padding: 8px 10px; }
+
+/* Modos */
+.modes { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface-2); border-radius: 16px; padding: 4px; gap: 4px; }
+.mode { border: 0; background: transparent; border-radius: 12px; padding: 10px 8px; font-weight: 700; font-size: 15px; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 0; line-height: 1.25; }
+.mode small { font-weight: 500; font-size: 12px; }
+.mode[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+
+/* Lista de resultados */
+.section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.section-head h2 { font-size: 22px; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.seg button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+select { border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 10px; font-size: 14px; font-weight: 600; }
+.list { display: flex; flex-direction: column; gap: 12px; }
+.card { text-align: left; width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: start; }
+.card:hover { border-color: var(--herb); }
+.tile { width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 22px; color: #fff; }
+.card-body { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.card-title { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+.card h3 { font-size: 18px; line-height: 1.2; }
+.fav-dot { flex: none; color: var(--tomato); }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.meta span { display: inline-flex; align-items: center; gap: 4px; }
+.meta svg { width: 14px; height: 14px; }
+.stars-inline { color: var(--saffron); font-weight: 700; }
+.match { display: flex; flex-direction: column; gap: 4px; }
+.match-bar { display: flex; gap: 3px; }
+.match-bar i { height: 6px; flex: 1; border-radius: 3px; background: var(--line); }
+.match-bar i.ok { background: var(--herb); }
+.match-text { font-size: 13px; font-weight: 600; }
+.match-text .miss { color: var(--missing); font-weight: 500; }
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+.badge.ai { background: var(--saffron); color: #2a1c00; }
+.empty { text-align: center; padding: 28px 16px; border: 1.5px dashed var(--line); border-radius: 18px; color: var(--muted); display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.empty strong { color: var(--ink); font-family: var(--display); font-size: 18px; }
+
+/* IA */
+.ai-box { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.ai-box h2 { font-size: 20px; }
+.prefs { display: flex; flex-wrap: wrap; gap: 6px; }
+.pref { border: 1.5px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.pref[aria-pressed="true"] { border-color: var(--herb); background: var(--herb-soft); color: var(--ink); }
+.ai-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.thinking { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 15px; }
+.pot { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--tomato); animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .pot { animation: none; } }
+.err { color: var(--missing); font-size: 14px; }
+
+/* Abas */
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.tabbar-inner { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; }
+.tab { border: 0; background: none; padding: 10px 0 12px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; font-weight: 700; color: var(--muted); position: relative; }
+.tab svg { width: 24px; height: 24px; }
+.tab[aria-selected="true"] { color: var(--tomato); }
+.tab .count { position: absolute; top: 6px; left: calc(50% + 8px); background: var(--tomato); color: var(--tomato-ink); font-size: 11px; border-radius: 999px; padding: 0 6px; min-width: 18px; line-height: 18px; }
+
+/* Painel da receita */
+.sheet-wrap { position: fixed; inset: 0; z-index: 30; background: rgba(10,16,12,.45); display: flex; justify-content: center; align-items: flex-end; }
+.sheet { background: var(--bg); width: 100%; max-width: 560px; max-height: calc(100% - env(safe-area-inset-top, 0px) - 24px); overflow-y: auto; border-radius: 24px 24px 0 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 calc(24px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 20px; animation: up .22s ease-out; }
+@keyframes up { from { transform: translateY(24px); opacity: .6; } }
+@media (prefers-reduced-motion: reduce) { .sheet { animation: none; } }
+.sheet-top { position: sticky; top: 0; background: var(--bg); padding-top: 10px; padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; z-index: 1; }
+.grabber { position: absolute; left: 50%; top: 6px; width: 40px; height: 4px; border-radius: 2px; background: var(--line); transform: translateX(-50%); }
+.icon-btn { width: 42px; height: 42px; border-radius: 50%; border: 0; background: var(--surface-2); display: grid; place-items: center; color: var(--ink); }
+.icon-btn svg { width: 20px; height: 20px; }
+.sheet h2 { font-size: 28px; line-height: 1.1; }
+.desc { margin: 0; color: var(--muted); }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 6px; text-align: center; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat b { font-family: var(--display); font-size: 20px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat span { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .02em; overflow-wrap: anywhere; }
+@media (max-width: 380px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+.block { display: flex; flex-direction: column; gap: 10px; }
+.block h3 { font-size: 20px; }
+.ing-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.ing-list li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-top: 1px solid var(--line); }
+.ing-list li:first-child { border-top: 0; }
+.ing-list .mark { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; margin-top: 1px; }
+.mark.have { background: var(--herb-soft); color: var(--herb); }
+.mark.need { background: var(--missing-soft); color: var(--missing); }
+.mark.basic { background: var(--surface-2); color: var(--muted); }
+.ing-list .tag { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--missing); white-space: nowrap; }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: s; }
+.steps li { display: grid; grid-template-columns: 32px 1fr; gap: 12px; counter-increment: s; }
+.steps li::before { content: counter(s); width: 32px; height: 32px; border-radius: 10px; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-family: var(--display); font-weight: 800; }
+.rate { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.rate-stars { display: flex; gap: 4px; }
+.rate-stars button { border: 0; background: none; padding: 2px; color: var(--line); }
+.rate-stars button.on { color: var(--saffron); }
+.rate-stars svg { width: 34px; height: 34px; }
+.sheet-actions { display: flex; gap: 8px; }
+.sheet-actions .btn { flex: 1; }
+.install-btn { margin-left: auto; border: 1.5px solid var(--tomato); color: var(--tomato); background: transparent; border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 700; }
+.install-tip { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); z-index: 35; max-width: 528px; margin: 0 auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; box-shadow: var(--shadow); display: flex; gap: 12px; align-items: flex-start; font-size: 15px; }
+.install-tip p { margin: 0; flex: 1; }
+.copyright { text-align: center; font-size: 13px; color: var(--muted); padding-top: 8px; border-top: 1px solid var(--line); }
+.toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 40; max-width: calc(100% - 32px); text-align: center; }
+</style>
+
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-3.5 2-5 .8 1.2 1.5 1.6 2 1.6C11 7.5 11.5 5 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M16 4.8a3.2 3.2 0 0 1 0 6.4M21 20c0-2.8-1.6-4.7-4-5.3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-level" viewBox="0 0 24 24"><path d="M5 19v-4M12 19V10M19 19V5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.5-7.5-10A4.3 4.3 0 0 1 12 7.5 4.3 4.3 0 0 1 19.5 10C19.5 15.5 12 20 12 20z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-heart-f" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.5-7.5-10A4.3 4.3 0 0 1 12 7.5 4.3 4.3 0 0 1 19.5 10C19.5 15.5 12 20 12 20z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-pan" viewBox="0 0 24 24"><circle cx="10" cy="13" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 13H22" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M8 4c0 1 1 1.3 1 2.3M11.5 3.5c0 1 1 1.3 1 2.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z" fill="currentColor"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" fill="currentColor"/></symbol>
+</svg>
+
+<div class="app" id="app">
+  <header class="brand">
+    <div class="brand-mark" aria-hidden="true"><svg style="color:#fff"><use href="#i-pan"/></svg></div>
+    <span class="brand-name">Cozinha do Que Tem</span>
+    <button class="install-btn" id="install" type="button" hidden>Instalar app</button>
+  </header>
+
+  <main id="view-cook" class="view" style="gap:22px">
+    <section class="hero hero-home">
+      <svg class="hero-art" viewBox="0 0 480 360" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <defs>
+          <pattern id="xadrez" width="28" height="28" patternUnits="userSpaceOnUse">
+            <rect width="28" height="28" fill="#fbf7f0"/>
+            <rect width="14" height="28" fill="#d9442a" opacity=".22"/>
+            <rect width="28" height="14" fill="#d9442a" opacity=".22"/>
+          </pattern>
+          <radialGradient id="prato" cx="50%" cy="45%" r="55%">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e9e7df"/>
+          </radialGradient>
+          <radialGradient id="caldo" cx="45%" cy="40%" r="60%">
+            <stop offset="0" stop-color="#f08a3a"/><stop offset="1" stop-color="#c8501f"/>
+          </radialGradient>
+          <filter id="sombra" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#3a2a1a" flood-opacity=".22"/></filter>
+        </defs>
+        <rect width="480" height="360" fill="url(#xadrez)"/>
+      
+        <!-- guardanapo e talheres -->
+        <rect x="18" y="98" width="62" height="150" rx="6" fill="#e9a21b" transform="rotate(-6 49 173)" filter="url(#sombra)"/>
+        <g fill="#aeb4b8" filter="url(#sombra)">
+          <rect x="34" y="150" width="7" height="92" rx="3.5"/>
+          <rect x="30" y="104" width="15" height="50" rx="7"/>
+          <rect x="58" y="104" width="7" height="138" rx="3.5"/>
+        </g>
+        <g fill="#fbf7f0"><rect x="33" y="104" width="2.4" height="26" rx="1.2"/><rect x="36.4" y="104" width="2.4" height="26" rx="1.2"/><rect x="39.8" y="104" width="2.4" height="26" rx="1.2"/></g>
+      
+        <!-- prato feito: arroz, feijão, ovo, salada -->
+        <g filter="url(#sombra)"><circle cx="170" cy="190" r="82" fill="url(#prato)"/></g>
+        <circle cx="170" cy="190" r="62" fill="#f6f4ee" stroke="#e2dfd5" stroke-width="2"/>
+        <path d="M120 170c6-24 34-36 54-26 10-12 32-8 36 8-4 22-22 30-44 30-20 6-44 6-46-12z" fill="#fffdf6"/>
+        <g fill="#ece6d4"><ellipse cx="140" cy="168" rx="3" ry="1.4"/><ellipse cx="156" cy="158" rx="3" ry="1.4" transform="rotate(30 156 158)"/><ellipse cx="176" cy="162" rx="3" ry="1.4"/><ellipse cx="190" cy="168" rx="3" ry="1.4" transform="rotate(-25 190 168)"/><ellipse cx="164" cy="174" rx="3" ry="1.4"/></g>
+        <path d="M128 200c10-10 40-12 52-2 6 14-6 32-28 32-18 0-30-12-24-30z" fill="#5a2a1c"/>
+        <g fill="#3a180f"><ellipse cx="146" cy="206" rx="4" ry="2.4"/><ellipse cx="160" cy="214" rx="4" ry="2.4" transform="rotate(20 160 214)"/><ellipse cx="150" cy="222" rx="4" ry="2.4"/><ellipse cx="168" cy="206" rx="4" ry="2.4" transform="rotate(-30 168 206)"/></g>
+        <path d="M184 196c4-14 26-18 36-6 10 4 8 22-4 26-10 8-30 6-32-6-6-4-4-10 0-14z" fill="#ffffff" stroke="#efe9dc" stroke-width="1.5"/>
+        <circle cx="202" cy="204" r="10" fill="#f2b630"/><circle cx="199" cy="201" r="3" fill="#fbd97a"/>
+        <g fill="#3d8150"><ellipse cx="196" cy="150" rx="12" ry="6" transform="rotate(-30 196 150)"/><ellipse cx="208" cy="162" rx="10" ry="5" transform="rotate(20 208 162)"/></g>
+        <circle cx="214" cy="178" r="9" fill="#d9442a"/><circle cx="214" cy="178" r="5" fill="#f07a5f"/>
+      
+        <!-- copo de suco -->
+        <g filter="url(#sombra)"><circle cx="292" cy="58" r="26" fill="#ffffff" opacity=".9"/></g>
+        <circle cx="292" cy="58" r="21" fill="#f2a12e"/><circle cx="286" cy="52" r="7" fill="#f7c46a" opacity=".8"/>
+        <path d="M300 40c6 8 6 22 0 30" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/>
+      
+        <!-- tigela de salada -->
+        <g filter="url(#sombra)"><circle cx="400" cy="100" r="62" fill="#2b7449"/></g>
+        <circle cx="400" cy="100" r="52" fill="#f6f4ee"/>
+        <g fill="#5fae5a"><ellipse cx="380" cy="86" rx="18" ry="10" transform="rotate(-25 380 86)"/><ellipse cx="414" cy="80" rx="17" ry="9" transform="rotate(30 414 80)"/><ellipse cx="398" cy="118" rx="19" ry="10" transform="rotate(10 398 118)"/><ellipse cx="424" cy="110" rx="14" ry="8" transform="rotate(-40 424 110)"/></g>
+        <g fill="#8fcf6e"><ellipse cx="392" cy="98" rx="14" ry="7" transform="rotate(50 392 98)"/><ellipse cx="370" cy="110" rx="11" ry="6" transform="rotate(-10 370 110)"/></g>
+        <g><circle cx="404" cy="96" r="7" fill="#d9442a"/><circle cx="380" cy="122" r="6" fill="#d9442a"/><circle cx="426" cy="92" r="6" fill="#d9442a"/></g>
+        <g fill="#cfe7b8" stroke="#3d8150" stroke-width="2"><circle cx="386" cy="74" r="7"/><circle cx="416" cy="124" r="7"/></g>
+      
+        <!-- panela de moqueca -->
+        <g filter="url(#sombra)">
+          <rect x="452" y="232" width="40" height="12" rx="6" fill="#2d2522"/>
+          <circle cx="398" cy="252" r="64" fill="#3a2f2b"/>
+        </g>
+        <circle cx="398" cy="252" r="54" fill="url(#caldo)"/>
+        <g fill="#fbefdc"><rect x="370" y="232" width="26" height="16" rx="7" transform="rotate(-15 383 240)"/><rect x="404" y="258" width="28" height="16" rx="7" transform="rotate(20 418 266)"/><rect x="372" y="266" width="22" height="14" rx="6"/></g>
+        <g fill="#d9442a"><circle cx="412" cy="232" r="7"/><circle cx="388" cy="288" r="6"/></g>
+        <g fill="#e9a21b"><rect x="420" y="236" width="14" height="6" rx="3" transform="rotate(35 427 239)"/><rect x="356" y="248" width="14" height="6" rx="3"/></g>
+        <g fill="#2f7d3c"><circle cx="398" cy="250" r="3"/><circle cx="430" cy="262" r="2.6"/><circle cx="366" cy="270" r="2.6"/><circle cx="404" cy="282" r="2.6"/><circle cx="380" cy="226" r="2.6"/></g>
+      
+        <!-- tábua com pão de queijo -->
+        <g filter="url(#sombra)"><rect x="196" y="282" width="140" height="64" rx="14" fill="#c98d4f"/></g>
+        <rect x="204" y="290" width="124" height="48" rx="10" fill="#d9a066"/>
+        <g filter="url(#sombra)" fill="#f0c35a"><circle cx="228" cy="312" r="14"/><circle cx="260" cy="306" r="14"/><circle cx="292" cy="314" r="14"/><circle cx="318" cy="304" r="11"/></g>
+        <g fill="#f7dc8f"><circle cx="224" cy="307" r="4"/><circle cx="256" cy="301" r="4"/><circle cx="288" cy="309" r="4"/></g>
+      
+        <!-- ervas soltas -->
+        <g fill="#3d8150" opacity=".9">
+          <ellipse cx="98" cy="300" rx="9" ry="4" transform="rotate(-30 98 300)"/><ellipse cx="112" cy="312" rx="8" ry="3.6" transform="rotate(20 112 312)"/>
+          <ellipse cx="268" cy="140" rx="8" ry="3.6" transform="rotate(40 268 140)"/><ellipse cx="300" cy="170" rx="7" ry="3.2" transform="rotate(-20 300 170)"/>
+          <ellipse cx="96" cy="40" rx="8" ry="3.6" transform="rotate(15 96 40)"/>
+        </g>
+        <g fill="#d9442a"><circle cx="140" cy="44" r="10"/><circle cx="158" cy="30" r="8"/></g>
+        <g fill="#3d8150"><rect x="137" y="31" width="5" height="4" rx="2"/><rect x="156" y="20" width="4" height="4" rx="2"/></g>
+      </svg>
+      <div class="hero-copy">
+        <h1>Vamos cozinhar com o que você tem na <em>cozinha!</em></h1>
+        <p>Conte o que tem na geladeira e na despensa. A gente mostra receitas testadas que dá para fazer agora, e o que falta para as outras.</p>
+      </div>
+    </section>
+
+    <section class="counter" aria-labelledby="counter-title">
+      <div class="section-head">
+        <h2 id="counter-title" style="font-size:18px">O que tem aí?</h2>
+        <span class="small muted" id="ing-count"></span>
+      </div>
+      <form class="add-row" id="add-form" autocomplete="off">
+        <label for="ing-input" class="sr" hidden>Ingrediente</label>
+        <input id="ing-input" list="ing-suggest" placeholder="Ex.: frango, batata, queijo…" aria-label="Adicionar ingrediente">
+        <datalist id="ing-suggest"></datalist>
+        <button class="btn btn-herb" type="submit">Adicionar</button>
+      </form>
+      <div class="chips" id="chips" aria-live="polite"></div>
+      <div id="example-note" class="note" hidden>Lista de exemplo carregada. Toque no × para tirar e adicione o que você tem.</div>
+      <div class="quick">
+        <span class="eyebrow">Toque para adicionar</span>
+        <div class="quick-list" id="quick"></div>
+      </div>
+      <div class="counter-foot">
+        <label class="toggle" for="basics"><input type="checkbox" id="basics" checked> Tenho sal, óleo, água e pimenta</label>
+        <button class="linkish" id="clear" type="button">Limpar tudo</button>
+      </div>
+    </section>
+
+    <section id="bank" class="block" style="gap:14px">
+      <div class="section-head">
+        <h2 id="bank-title">Receitas para você</h2>
+        <select id="sort" aria-label="Ordenar">
+          <option value="match">Mais compatíveis</option>
+                    <option value="time">Mais rápidas</option>
+          <option value="kcal">Menos calorias</option>
+        </select>
+      </div>
+      <div class="seg" id="missing-filter" role="group" aria-label="Ingredientes faltando">
+        <button type="button" data-max="0" aria-pressed="false">Só com o que tenho</button>
+        <button type="button" data-max="2" aria-pressed="true">Faltam até 2</button>
+        <button type="button" data-max="99" aria-pressed="false">Todas</button>
+      </div>
+      <div class="list" id="bank-list"></div>
+    </section>
+  </main>
+
+  <main id="view-favs" class="view" style="gap:16px" hidden>
+    <section class="hero">
+      <span class="eyebrow">Salvas neste aparelho</span>
+      <h1 style="font-size:34px">Suas favoritas</h1>
+      <p>Ficam guardadas só neste navegador, sem precisar de conta.</p>
+    </section>
+    <div class="list" id="fav-list"></div>
+  </main>
+  <footer class="copyright">Copyright © TapNode Labs</footer>
+</div>
+
+<nav class="tabbar" aria-label="Seções">
+  <div class="tabbar-inner" role="tablist">
+    <button class="tab" role="tab" id="tab-cook" aria-selected="true"><svg><use href="#i-pan"/></svg>Cozinhar</button>
+    <button class="tab" role="tab" id="tab-favs" aria-selected="false"><svg><use href="#i-heart"/></svg>Favoritas<span class="count" id="fav-count" hidden></span></button>
+  </div>
+</nav>
+
+<div class="sheet-wrap" id="sheet-wrap" hidden>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"></div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<div class="install-tip" id="ios-tip" role="dialog" aria-label="Como instalar" hidden>
+  <p>Para instalar no iPhone: toque em <strong>Compartilhar</strong> (o quadrado com a seta) na barra do Safari e depois em <strong>Adicionar à Tela de Início</strong>.</p>
+  <button class="icon-btn" id="ios-tip-close" type="button" aria-label="Fechar"><svg><use href="#i-close"/></svg></button>
+</div>
+
+<script>
+// ---------- Banco de receitas ----------
+// Ingrediente: [texto, alternativas separadas por "|" (sufixo * = aceita variações, ex. "queijo*" casa com "queijo minas"), básico?]
+const CAT = {
+  ovos: ["Ovos", "#d08a14"], massas: ["Massas", "#c8532f"], carnes: ["Carnes", "#9c3b2c"], aves: ["Aves", "#b8642b"],
+  peixes: ["Peixes", "#2f6f8f"], legumes: ["Legumes", "#3d8150"], doces: ["Doces", "#9a4d7a"], lanches: ["Lanches", "#7a6a2a"], arroz: ["Arroz e grãos", "#5f7a35"]
+};
+const RECEITAS = [
+ { id:"omelete", nome:"Omelete de queijo e tomate", cat:"ovos", porcoes:1, tempo:10, dif:"Fácil", kcal:320,
+   desc:"Rápida, proteica e boa para qualquer hora do dia.",
+   ing:[["3 ovos","ovo"],["30 g de queijo mussarela ralado","queijo*|mussarela|mucarela"],["1/2 tomate em cubos","tomate*"],["1 colher (sopa) de cebola picada","cebola*"],["Sal e pimenta a gosto","sal",1],["1 fio de óleo","oleo",1]],
+   passos:["Bata os ovos com sal e pimenta até ficarem espumosos.","Aqueça o óleo numa frigideira antiaderente em fogo médio e refogue a cebola por 1 minuto.","Despeje os ovos e deixe firmar as bordas, puxando o centro com a espátula.","Espalhe o tomate e o queijo sobre metade da omelete.","Dobre ao meio, tampe por 1 minuto para o queijo derreter e sirva."] },
+ { id:"shakshuka", nome:"Ovos no molho de tomate (shakshuka)", cat:"ovos", porcoes:2, tempo:25, dif:"Fácil", kcal:290,
+   desc:"Ovos cozidos devagar num molho de tomate temperado. Vai bem com pão.",
+   ing:[["4 ovos","ovo"],["4 tomates maduros picados","tomate*|molho de tomate"],["1 cebola picada","cebola*"],["1/2 pimentão picado","pimentao*"],["2 dentes de alho","alho"],["1 colher (chá) de páprica","paprica*|colorau"],["2 colheres (sopa) de azeite","azeite|oleo",1],["Sal a gosto","sal",1]],
+   passos:["Aqueça o azeite e refogue cebola e pimentão por 5 minutos.","Junte o alho e a páprica e mexa por 30 segundos.","Acrescente o tomate e sal, tampe e cozinhe por 10 minutos até virar molho.","Abra quatro covas no molho e quebre um ovo em cada.","Tampe e cozinhe por 5 a 7 minutos, até a clara firmar e a gema continuar mole."] },
+ { id:"macarrao-alho", nome:"Macarrão alho e óleo", cat:"massas", porcoes:2, tempo:20, dif:"Fácil", kcal:480,
+   desc:"Clássico de despensa: poucos ingredientes e muito sabor.",
+   ing:[["200 g de espaguete","macarrao*|espaguete|massa"],["5 dentes de alho fatiados","alho"],["4 colheres (sopa) de azeite","azeite|oleo",1],["Salsinha picada a gosto","salsinha|cheiro verde|salsa"],["Sal a gosto","sal",1],["Água para cozinhar","agua",1]],
+   passos:["Cozinhe o macarrão em água fervente com sal até ficar al dente. Reserve meia xícara da água.","Em fogo baixo, aqueça o azeite com o alho até dourar levemente, sem queimar.","Junte o macarrão escorrido e um pouco da água do cozimento.","Misture bem, finalize com salsinha e sirva na hora."] },
+ { id:"lasanha", nome:"Lasanha à bolonhesa", cat:"massas", porcoes:8, tempo:90, dif:"Difícil", kcal:560,
+   desc:"Camadas de molho de carne, molho branco, presunto e queijo.",
+   ing:[["500 g de massa de lasanha","lasanha|massa de lasanha"],["500 g de carne moída","carne moida"],["2 xícaras de molho de tomate","tomate*|molho de tomate"],["300 g de queijo mussarela fatiado","queijo*|mussarela|mucarela"],["200 g de presunto fatiado","presunto"],["500 ml de leite","leite"],["2 colheres (sopa) de manteiga","manteiga|margarina"],["2 colheres (sopa) de farinha de trigo","farinha de trigo|farinha"],["1 cebola picada","cebola*"],["2 dentes de alho","alho"],["Sal e óleo","sal",1]],
+   passos:["Refogue cebola e alho no óleo, junte a carne e frite até perder a cor.","Adicione o molho de tomate e sal e cozinhe por 15 minutos.","Para o molho branco, derreta a manteiga, junte a farinha e mexa 1 minuto. Acrescente o leite aos poucos, mexendo até engrossar.","Numa travessa, monte camadas: molho de carne, massa, presunto, queijo e molho branco. Repita.","Termine com molho e queijo. Cubra com papel-alumínio.","Asse a 200 °C por 30 minutos, retire o papel e asse mais 10 minutos para gratinar."] },
+ { id:"strogonoff", nome:"Strogonoff de frango", cat:"aves", porcoes:4, tempo:35, dif:"Fácil", kcal:420,
+   desc:"Cremoso e querido em todo o Brasil. Sirva com arroz e batata palha.",
+   ing:[["600 g de peito de frango em cubos","frango*|peito de frango"],["1 caixa de creme de leite","creme de leite"],["3 colheres (sopa) de molho de tomate","tomate*|molho de tomate|extrato de tomate"],["2 colheres (sopa) de ketchup","ketchup"],["1 colher (sopa) de mostarda","mostarda"],["1 cebola picada","cebola*"],["2 dentes de alho","alho"],["150 g de champignon fatiado (opcional)","champignon|cogumelo*"],["Sal e óleo","sal",1]],
+   passos:["Tempere o frango com sal e doure em óleo quente, aos poucos. Reserve.","Na mesma panela, refogue cebola e alho.","Volte o frango, junte o champignon, o molho de tomate, o ketchup e a mostarda.","Cozinhe por 10 minutos em fogo baixo.","Desligue o fogo, misture o creme de leite e acerte o sal."] },
+ { id:"frango-legumes", nome:"Frango grelhado com legumes", cat:"aves", porcoes:2, tempo:30, dif:"Fácil", kcal:350,
+   desc:"Prato leve, colorido e pronto em meia hora.",
+   ing:[["2 filés de peito de frango","frango*|peito de frango"],["1 abobrinha em rodelas","abobrinha"],["1 cenoura em palitos","cenoura"],["1 xícara de floretes de brócolis","brocolis"],["Suco de 1 limão","limao"],["2 dentes de alho amassados","alho"],["2 colheres (sopa) de azeite","azeite|oleo",1],["Sal e pimenta","sal",1]],
+   passos:["Tempere o frango com limão, alho, sal e pimenta. Deixe 10 minutos.","Grelhe o frango numa frigideira com um fio de azeite, 5 minutos de cada lado.","Na mesma frigideira, salteie cenoura e brócolis por 4 minutos.","Junte a abobrinha e cozinhe mais 3 minutos, mantendo os legumes crocantes.","Sirva o frango fatiado sobre os legumes."] },
+ { id:"torta-frango", nome:"Torta de frango de liquidificador", cat:"aves", porcoes:6, tempo:55, dif:"Médio", kcal:380,
+   desc:"Massa batida no liquidificador e recheio cremoso de frango.",
+   ing:[["2 xícaras de frango cozido e desfiado","frango*|peito de frango"],["2 xícaras de farinha de trigo","farinha de trigo|farinha"],["2 xícaras de leite","leite"],["3 ovos","ovo"],["1/2 xícara de óleo","oleo",1],["100 g de queijo ralado","queijo*|mussarela|parmesao"],["1 tomate picado","tomate*"],["1/2 xícara de milho","milho*"],["1 colher (sopa) de fermento em pó","fermento*"],["Sal a gosto","sal",1]],
+   passos:["Misture o frango com tomate, milho e sal. Reserve o recheio.","Bata no liquidificador leite, ovos, óleo, farinha e sal. Por último, junte o fermento e pulse.","Despeje metade da massa numa forma untada, espalhe o recheio e cubra com o resto da massa.","Polvilhe o queijo por cima.","Asse a 180 °C por cerca de 40 minutos, até dourar."] },
+ { id:"carne-panela", nome:"Carne de panela com batata", cat:"carnes", porcoes:5, tempo:90, dif:"Médio", kcal:470,
+   desc:"Carne macia no molho, cozida com batata e cenoura.",
+   ing:[["1 kg de acém ou músculo em cubos","carne*|acem|musculo|patinho"],["4 batatas em cubos","batata"],["2 cenouras em rodelas","cenoura"],["1 cebola picada","cebola*"],["3 dentes de alho","alho"],["2 tomates picados","tomate*|molho de tomate"],["Sal, pimenta e óleo","sal",1],["Água","agua",1]],
+   passos:["Tempere a carne com sal e pimenta e doure em óleo bem quente, em partes.","Junte cebola e alho e refogue.","Acrescente o tomate e água até cobrir a carne.","Cozinhe na pressão por 35 minutos (ou 1h30 em panela comum).","Tire a pressão, junte batata e cenoura e cozinhe mais 10 minutos até ficarem macias."] },
+ { id:"escondidinho", nome:"Escondidinho de carne moída", cat:"carnes", porcoes:4, tempo:60, dif:"Médio", kcal:520,
+   desc:"Purê cremoso por cima de carne moída temperada, gratinado no forno.",
+   ing:[["800 g de batata","batata|mandioca|aipim|macaxeira"],["500 g de carne moída","carne moida"],["1 xícara de leite","leite"],["2 colheres (sopa) de manteiga","manteiga|margarina"],["150 g de queijo mussarela","queijo*|mussarela|mucarela"],["1 cebola picada","cebola*"],["2 dentes de alho","alho"],["2 tomates picados","tomate*|molho de tomate"],["Sal e óleo","sal",1]],
+   passos:["Cozinhe a batata em água com sal até ficar macia e amasse ainda quente.","Leve ao fogo com manteiga e leite, mexendo até virar um purê liso.","Refogue cebola e alho no óleo, junte a carne e frite. Acrescente tomate e sal e cozinhe 10 minutos.","Numa travessa, coloque a carne, cubra com o purê e espalhe o queijo.","Gratine em forno a 200 °C por 15 minutos."] },
+ { id:"panqueca", nome:"Panqueca de carne moída", cat:"carnes", porcoes:4, tempo:50, dif:"Médio", kcal:410,
+   desc:"Massa fininha recheada com carne e coberta com molho e queijo.",
+   ing:[["1 xícara de farinha de trigo","farinha de trigo|farinha"],["1 xícara de leite","leite"],["2 ovos","ovo"],["400 g de carne moída","carne moida"],["2 xícaras de molho de tomate","tomate*|molho de tomate"],["1 cebola picada","cebola*"],["2 dentes de alho","alho"],["100 g de queijo ralado","queijo*|mussarela|parmesao"],["Sal e óleo","sal",1]],
+   passos:["Bata farinha, leite, ovos, uma colher de óleo e sal no liquidificador.","Numa frigideira untada, despeje uma concha de massa, espalhe e doure dos dois lados. Repita.","Refogue cebola e alho, junte a carne e frite. Adicione metade do molho.","Recheie as panquecas, enrole e arrume numa travessa.","Cubra com o resto do molho e o queijo e leve ao forno a 200 °C por 15 minutos."] },
+ { id:"tropeiro", nome:"Feijão tropeiro", cat:"arroz", porcoes:6, tempo:45, dif:"Médio", kcal:480,
+   desc:"Prato mineiro com feijão, farinha, bacon, linguiça, ovo e couve.",
+   ing:[["3 xícaras de feijão cozido e escorrido","feijao*"],["1 xícara de farinha de mandioca","farinha de mandioca"],["150 g de bacon em cubos","bacon"],["1 linguiça calabresa em rodelas","linguica*|calabresa"],["3 ovos","ovo"],["1 cebola picada","cebola*"],["3 dentes de alho","alho"],["2 folhas de couve fatiadas","couve"],["Sal a gosto","sal",1]],
+   passos:["Frite o bacon na própria gordura até dourar. Junte a linguiça e frite mais.","Acrescente cebola e alho e refogue.","Abra espaço na panela, quebre os ovos e mexa até ficarem cozidos.","Junte o feijão e a couve e misture por 2 minutos.","Adicione a farinha aos poucos, mexendo até ficar soltinho. Acerte o sal."] },
+ { id:"arroz-forno", nome:"Arroz de forno", cat:"arroz", porcoes:4, tempo:40, dif:"Fácil", kcal:450,
+   desc:"Ótimo para aproveitar o arroz que sobrou.",
+   ing:[["4 xícaras de arroz cozido","arroz*"],["150 g de presunto em cubos","presunto"],["150 g de queijo mussarela","queijo*|mussarela|mucarela"],["1/2 xícara de milho","milho*"],["1/2 xícara de ervilha","ervilha"],["1 caixa de creme de leite","creme de leite"],["2 ovos","ovo"],["Sal a gosto","sal",1]],
+   passos:["Misture o arroz com presunto, milho, ervilha, metade do queijo e o creme de leite.","Bata os ovos com sal e incorpore à mistura.","Espalhe numa travessa untada e cubra com o restante do queijo.","Asse a 200 °C por 20 minutos, até gratinar."] },
+ { id:"arroz-brocolis", nome:"Arroz com brócolis", cat:"arroz", porcoes:4, tempo:25, dif:"Fácil", kcal:230,
+   desc:"Acompanhamento verde e cheiroso, feito numa panela só.",
+   ing:[["1 xícara de arroz","arroz*"],["2 xícaras de brócolis picado","brocolis"],["3 dentes de alho","alho"],["2 colheres (sopa) de óleo ou azeite","oleo",1],["Sal a gosto","sal",1],["2 xícaras de água quente","agua",1]],
+   passos:["Doure o alho no óleo e junte o arroz, mexendo por 1 minuto.","Adicione a água quente e o sal e cozinhe em fogo baixo com tampa.","Quando a água estiver quase secando, espalhe o brócolis por cima e tampe de novo.","Desligue quando o arroz estiver macio e misture o brócolis."] },
+ { id:"risoto", nome:"Risoto de cogumelos", cat:"arroz", porcoes:4, tempo:40, dif:"Difícil", kcal:430,
+   desc:"Cremoso no ponto certo, pede atenção e caldo quente perto do fogão.",
+   ing:[["1 1/2 xícara de arroz arbóreo","arroz*|arroz arboreo"],["300 g de cogumelos fatiados","cogumelo*|champignon|shiitake|shimeji"],["1 cebola picada","cebola*"],["1/2 xícara de vinho branco","vinho branco|vinho"],["1,2 litro de caldo de legumes quente","caldo*"],["3 colheres (sopa) de manteiga","manteiga"],["1/2 xícara de parmesão ralado","parmesao|queijo*"],["Sal e azeite","sal",1]],
+   passos:["Salteie os cogumelos em azeite com sal e reserve.","Na mesma panela, refogue a cebola em 1 colher de manteiga e junte o arroz, mexendo por 2 minutos.","Adicione o vinho e mexa até evaporar.","Junte o caldo uma concha por vez, mexendo sempre e esperando secar antes da próxima, por cerca de 18 minutos.","Quando o arroz estiver al dente, volte os cogumelos e desligue o fogo.","Misture o restante da manteiga e o parmesão vigorosamente e sirva na hora."] },
+ { id:"moqueca", nome:"Moqueca de peixe", cat:"peixes", porcoes:4, tempo:45, dif:"Médio", kcal:390,
+   desc:"Peixe cozido em camadas com leite de coco e dendê.",
+   ing:[["800 g de peixe em postas","peixe*|tilapia|pescada|robalo|cacao"],["2 tomates em rodelas","tomate*"],["1 cebola em rodelas","cebola*"],["1 pimentão em rodelas","pimentao*"],["200 ml de leite de coco","leite de coco"],["2 colheres (sopa) de azeite de dendê","dende|azeite de dende"],["Coentro picado","coentro|cheiro verde"],["Suco de 1 limão","limao"],["2 dentes de alho","alho"],["Sal a gosto","sal",1]],
+   passos:["Tempere o peixe com limão, alho e sal e deixe 15 minutos.","Numa panela larga, faça uma camada de cebola, tomate e pimentão.","Arrume o peixe por cima e cubra com o restante dos legumes.","Regue com leite de coco e dendê, tampe e cozinhe em fogo médio por 15 minutos, sem mexer.","Finalize com coentro."] },
+ { id:"sopa-legumes", nome:"Sopa de legumes", cat:"legumes", porcoes:4, tempo:40, dif:"Fácil", kcal:180,
+   desc:"Conforto em tigela, boa para aproveitar legumes da semana.",
+   ing:[["2 batatas em cubos","batata"],["2 cenouras em cubos","cenoura"],["1 abobrinha em cubos","abobrinha"],["1 chuchu em cubos","chuchu"],["1 cebola picada","cebola*"],["2 dentes de alho","alho"],["1/2 xícara de macarrão pequeno","macarrao*|massa|letrinha"],["1,5 litro de água","agua",1],["Sal e óleo","sal",1]],
+   passos:["Refogue cebola e alho num fio de óleo.","Junte batata e cenoura, cubra com a água e cozinhe por 15 minutos.","Acrescente chuchu, abobrinha e macarrão.","Cozinhe mais 10 minutos e acerte o sal."] },
+ { id:"pure", nome:"Purê de batata", cat:"legumes", porcoes:4, tempo:30, dif:"Fácil", kcal:210,
+   desc:"Liso e amanteigado, acompanha quase tudo.",
+   ing:[["1 kg de batata","batata"],["1/2 xícara de leite quente","leite"],["2 colheres (sopa) de manteiga","manteiga|margarina"],["Sal e noz-moscada","sal",1]],
+   passos:["Cozinhe as batatas descascadas em água com sal até desmancharem no garfo.","Escorra e amasse ainda quentes.","Leve ao fogo baixo com a manteiga e vá juntando o leite, mexendo até ficar cremoso.","Tempere com sal e uma pitada de noz-moscada."] },
+ { id:"salada-grao", nome:"Salada de grão-de-bico", cat:"legumes", porcoes:3, tempo:15, dif:"Fácil", kcal:260,
+   desc:"Fresca, sem fogão (com grão já cozido) e rica em fibras.",
+   ing:[["2 xícaras de grão-de-bico cozido","grao de bico"],["2 tomates em cubos","tomate*"],["1 pepino em cubos","pepino"],["1/2 cebola roxa picada","cebola*"],["Salsinha picada","salsinha|cheiro verde|salsa"],["Suco de 1 limão","limao"],["3 colheres (sopa) de azeite","azeite|oleo",1],["Sal a gosto","sal",1]],
+   passos:["Junte grão-de-bico, tomate, pepino e cebola numa tigela.","Tempere com limão, azeite e sal.","Finalize com salsinha e deixe 5 minutos na geladeira antes de servir."] },
+ { id:"farofa-banana", nome:"Farofa de banana", cat:"legumes", porcoes:4, tempo:15, dif:"Fácil", kcal:240,
+   desc:"Doce e salgada ao mesmo tempo, perfeita com feijão e carne.",
+   ing:[["3 bananas-nanicas em rodelas","banana*"],["1 1/2 xícara de farinha de mandioca","farinha de mandioca"],["3 colheres (sopa) de manteiga","manteiga|margarina"],["1/2 cebola picada","cebola*"],["Sal a gosto","sal",1]],
+   passos:["Derreta a manteiga e doure a cebola.","Junte a banana e deixe dourar sem desmanchar.","Acrescente a farinha aos poucos, mexendo até tostar levemente.","Acerte o sal."] },
+ { id:"pao-queijo", nome:"Pão de queijo de liquidificador", cat:"lanches", porcoes:10, tempo:35, dif:"Fácil", kcal:140,
+   desc:"Sem sovar: bate tudo e assa em forminhas. Porção de 2 unidades.",
+   ing:[["2 xícaras de polvilho","polvilho*"],["2 ovos","ovo"],["1 xícara de leite","leite"],["1/2 xícara de óleo","oleo",1],["1 xícara de queijo ralado","queijo*|parmesao|meia cura"],["1 colher (chá) de sal","sal",1]],
+   passos:["Bata ovos, leite, óleo e sal no liquidificador.","Junte o polvilho e o queijo e bata até ficar homogêneo.","Distribua em forminhas de empada untadas, até 3/4 da altura.","Asse a 200 °C por 25 minutos, até dourar."] },
+ { id:"tapioca", nome:"Tapioca de queijo e presunto", cat:"lanches", porcoes:1, tempo:10, dif:"Fácil", kcal:280,
+   desc:"Café da manhã rápido e sem glúten.",
+   ing:[["4 colheres (sopa) de goma de tapioca","tapioca|goma de tapioca|goma"],["2 fatias de queijo","queijo*|mussarela|mucarela|queijo coalho"],["2 fatias de presunto","presunto"]],
+   passos:["Peneire a goma direto numa frigideira antiaderente fria, formando um disco.","Ligue o fogo médio e espere a goma grudar (cerca de 1 minuto).","Vire, recheie metade com queijo e presunto e dobre.","Deixe mais 1 minuto para o queijo derreter."] },
+ { id:"cuscuz", nome:"Cuscuz nordestino com ovo", cat:"lanches", porcoes:2, tempo:15, dif:"Fácil", kcal:300,
+   desc:"Flocão de milho no vapor, servido com manteiga e ovo.",
+   ing:[["2 xícaras de flocão de milho","flocao*|flocao de milho|farinha de milho|cuscuz"],["2 ovos","ovo"],["1 colher (sopa) de manteiga","manteiga|margarina"],["3/4 xícara de água","agua",1],["Sal a gosto","sal",1]],
+   passos:["Hidrate o flocão com água e sal e deixe descansar 10 minutos.","Coloque na cuscuzeira sem apertar e cozinhe no vapor por 10 minutos.","Enquanto isso, frite os ovos.","Sirva o cuscuz com manteiga e os ovos por cima."] },
+ { id:"bolo-cenoura", nome:"Bolo de cenoura com chocolate", cat:"doces", porcoes:12, tempo:60, dif:"Médio", kcal:290,
+   desc:"Fofinho, com cobertura de brigadeiro mole.",
+   ing:[["3 cenouras médias","cenoura"],["4 ovos","ovo"],["1 xícara de óleo","oleo",1],["2 xícaras de açúcar","acucar"],["2 1/2 xícaras de farinha de trigo","farinha de trigo|farinha"],["1 colher (sopa) de fermento em pó","fermento*"],["4 colheres (sopa) de chocolate em pó","chocolate*|achocolatado|cacau"],["1 colher (sopa) de manteiga","manteiga|margarina"]],
+   passos:["Bata cenoura, ovos e óleo no liquidificador até ficar liso.","Numa tigela, misture com açúcar e farinha. Por último, o fermento.","Asse em forma untada a 180 °C por 40 minutos.","Para a cobertura, leve ao fogo chocolate, 3 colheres de açúcar, manteiga e 3 colheres de leite ou água até engrossar.","Espalhe a cobertura no bolo ainda morno."] },
+ { id:"brigadeiro", nome:"Brigadeiro de panela", cat:"doces", porcoes:4, tempo:15, dif:"Fácil", kcal:300,
+   desc:"Para comer de colher, ainda quentinho.",
+   ing:[["1 lata de leite condensado","leite condensado"],["2 colheres (sopa) de chocolate em pó","chocolate*|achocolatado|cacau"],["1 colher (sopa) de manteiga","manteiga|margarina"]],
+   passos:["Junte tudo numa panela e leve ao fogo baixo.","Mexa sem parar até desgrudar do fundo, cerca de 10 minutos.","Sirva em potinhos."] },
+ { id:"pudim", nome:"Pudim de leite condensado", cat:"doces", porcoes:8, tempo:90, dif:"Médio", kcal:310,
+   desc:"Liso, sem furinhos, com calda de caramelo. Gele por 4 horas.",
+   ing:[["1 lata de leite condensado","leite condensado"],["A mesma medida de leite","leite"],["3 ovos","ovo"],["1 xícara de açúcar (calda)","acucar"]],
+   passos:["Derreta o açúcar em fogo baixo até dourar, junte meia xícara de água e espalhe a calda na forma.","Bata leite condensado, leite e ovos no liquidificador por 1 minuto.","Coe a mistura sobre a calda.","Asse em banho-maria a 180 °C por 1 hora, coberto com papel-alumínio.","Espere esfriar e leve à geladeira por 4 horas antes de desenformar."] },
+ { id:"banana-canela", nome:"Banana caramelizada com canela", cat:"doces", porcoes:2, tempo:15, dif:"Fácil", kcal:210,
+   desc:"Sobremesa de frigideira com o que quase sempre tem em casa.",
+   ing:[["3 bananas maduras","banana*"],["2 colheres (sopa) de açúcar","acucar"],["1 colher (sopa) de manteiga","manteiga|margarina"],["Canela em pó a gosto","canela"]],
+   passos:["Corte as bananas ao meio no comprimento.","Derreta a manteiga com o açúcar numa frigideira até formar um caramelo claro.","Doure as bananas 2 minutos de cada lado.","Polvilhe canela e sirva quente."] },
+];
+
+// ---------- Utilidades ----------
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const stemWord = w => w.length > 3 ? w.replace(/oes$|aes$/, "ao").replace(/s$/, "") : w;
+const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[-_,.]/g, " ").replace(/\s+/g, " ").trim().split(" ").map(stemWord).join(" ");
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+const fmt = n => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+const tempoTxt = m => m >= 60 ? `${Math.floor(m/60)}h${m%60 ? String(m%60).padStart(2,"0") : ""}` : `${m} min`;
+const initials = name => name.split(/\s+/).filter(w => w.length > 2).slice(0, 2).map(w => w[0].toUpperCase()).join("");
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2200); }
+
+// Pré-processa alternativas
+for (const r of RECEITAS) r.ingN = r.ing.map(([t, alts, b]) => ({ t, b: !!b, alts: alts.split("|").map(a => ({ wild: a.endsWith("*"), k: norm(a.replace("*", "")) })) }));
+const SUGESTOES = [...new Set(RECEITAS.flatMap(r => r.ing.filter(i => !i[2]).map(i => i[1].split("|")[0].replace("*", ""))))];
+const LABELS = { acucar:"açúcar", brocolis:"brócolis", "carne moida":"carne moída", feijao:"feijão", "grao de bico":"grão-de-bico", limao:"limão", linguica:"linguiça", macarrao:"macarrão", pimentao:"pimentão", paprica:"páprica", flocao:"flocão de milho", dende:"dendê", parmesao:"parmesão", "leite condensado":"leite condensado", "grao de bico":"grão-de-bico", "creme de leite":"creme de leite", "farinha de mandioca":"farinha de mandioca" };
+const LABELS_N = Object.fromEntries(Object.entries(LABELS).map(([k, v]) => [norm(k), v]));
+const label = k => LABELS[k] || LABELS_N[k] || k;
+$("#ing-suggest").innerHTML = SUGESTOES.map(s => `<option value="${esc(label(s))}">`).join("");
+const QUICK = ["ovo","tomate","cebola","alho","arroz","frango","carne moída","batata","queijo","leite","cenoura","macarrão","feijão","banana","farinha de trigo","manteiga","limão","presunto"];
+
+// ---------- Estado ----------
+const EXEMPLO = ["ovo", "tomate", "cebola", "queijo", "arroz", "alho"];
+let saved = store.get("cq-ingredientes", null);
+let ingredientes = saved ?? EXEMPLO.slice();
+let isExample = saved === null;
+let basicos = store.get("cq-basicos", true);
+let maxFaltando = 2, ordem = "match", modo = "bank";
+let favoritos = store.get("cq-favoritos", {});
+let aiReceitas = [];
+let prefs = new Set();
+let notas = {};      // id -> {soma, n}
+let minhasNotas = {}; // id -> nota
+let db = null, uid = null, canVote = false;
+
+function saveIngs() { store.set("cq-ingredientes", ingredientes); isExample = false; }
+
+function analisar(r) {
+  const termos = ingredientes.map(norm);
+  const itens = r.ingN.map(i => {
+    const tem = i.b ? basicos : termos.some(u => i.alts.some(a => u === a.k || (a.wild && (" " + u + " ").includes(" " + a.k + " "))));
+    return { ...i, tem };
+  });
+  const principais = itens.filter(i => !i.b);
+  const ok = principais.filter(i => i.tem).length;
+  const faltam = itens.filter(i => !i.tem);
+  return { itens, ok, total: principais.length, faltam };
+}
+
+// ---------- Render: bancada ----------
+function renderChips() {
+  $("#chips").innerHTML = ingredientes.length
+    ? ingredientes.map((g, i) => `<span class="chip">${esc(g)}<button class="x" data-i="${i}" aria-label="Remover ${esc(g)}">×</button></span>`).join("")
+    : `<span class="empty-chips">Nenhum ingrediente ainda. Digite acima ou toque nas sugestões.</span>`;
+  $("#ing-count").textContent = ingredientes.length ? `${ingredientes.length} ingrediente${ingredientes.length > 1 ? "s" : ""}` : "";
+  $("#example-note").hidden = !isExample;
+  const tem = new Set(ingredientes.map(norm));
+  $("#quick").innerHTML = QUICK.filter(q => !tem.has(norm(q))).map(q => `<button class="qchip" type="button" data-q="${esc(q)}">+ ${esc(q)}</button>`).join("");
+  $("#basics").checked = basicos;
+}
+function addIngrediente(raw) {
+  const parts = raw.split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+  for (const p of parts) if (!ingredientes.some(g => norm(g) === norm(p))) ingredientes.push(p.toLowerCase());
+  saveIngs(); renderAll();
+}
+
+// ---------- Render: cards ----------
+function ratingInfo(id) { const a = notas[id]; return a && a.n ? { media: a.soma / a.n, n: a.n } : null; }
+function cardHTML(r, extra = {}) {
+  const a = r.ia ? null : analisar(r);
+  const cor = r.ia ? "var(--saffron)" : CAT[r.cat][1];
+  const rating = r.ia ? null : ratingInfo(r.id);
+  const fav = !!favoritos[r.id];
+  let match = "";
+  if (a) {
+    const bars = a.itens.filter(i => !i.b).map(i => `<i class="${i.tem ? "ok" : ""}"></i>`).join("");
+    const falt = a.faltam.filter(i => !i.b);
+    match = `<div class="match"><div class="match-bar" aria-hidden="true">${bars}</div>
+      <div class="match-text">Você tem ${a.ok} de ${a.total}${falt.length ? ` <span class="miss">· falta ${esc(falt.slice(0,2).map(i => label(i.alts[0].k)).join(", "))}${falt.length > 2 ? ` e mais ${falt.length - 2}` : ""}</span>` : ` <span style="color:var(--herb)">· tem tudo!</span>`}</div></div>`;
+  }
+  return `<button class="card" data-open="${esc(r.id)}" type="button">
+    <div class="tile" style="background:${cor}" aria-hidden="true">${r.ia ? '<svg width="26" height="26" style="color:#2a1c00"><use href="#i-spark"/></svg>' : esc(initials(r.nome))}</div>
+    <div class="card-body">
+      <div class="card-title"><h3>${esc(r.nome)}</h3>${fav ? '<svg class="fav-dot" width="20" height="20" aria-label="Favorita"><use href="#i-heart-f"/></svg>' : ""}</div>
+      <div class="meta">
+        ${r.ia ? '<span class="badge ai">Criada por IA</span>' : `<span class="badge">${CAT[r.cat][0]}</span>`}
+        ${rating ? `<span class="stars-inline"><svg style="color:var(--saffron)"><use href="#i-star"/></svg>${fmt(rating.media)}</span><span>(${rating.n})</span>` : ""}
+      </div>
+      <div class="meta">
+        <span><svg><use href="#i-clock"/></svg>${tempoTxt(r.tempo)}</span>
+        <span><svg><use href="#i-level"/></svg>${esc(r.dif)}</span>
+        <span><svg><use href="#i-people"/></svg>${r.porcoes} ${r.porcoes > 1 ? "porções" : "porção"}</span>
+        <span><svg><use href="#i-fire"/></svg>${r.kcal} kcal</span>
+      </div>
+      ${match}
+    </div></button>`;
+}
+
+function renderBank() {
+  const lista = RECEITAS.map(r => ({ r, a: analisar(r) }))
+    .filter(x => x.a.ok > 0 && x.a.faltam.length <= maxFaltando);
+  const by = {
+    match: (x, y) => x.a.faltam.length - y.a.faltam.length || (y.a.ok / y.a.total) - (x.a.ok / x.a.total) || (ratingInfo(y.r.id)?.media ?? 0) - (ratingInfo(x.r.id)?.media ?? 0),
+    rating: (x, y) => (ratingInfo(y.r.id)?.media ?? 0) - (ratingInfo(x.r.id)?.media ?? 0) || (ratingInfo(y.r.id)?.n ?? 0) - (ratingInfo(x.r.id)?.n ?? 0) || x.a.faltam.length - y.a.faltam.length,
+    time: (x, y) => x.r.tempo - y.r.tempo,
+    kcal: (x, y) => x.r.kcal - y.r.kcal,
+  }[ordem];
+  lista.sort(by);
+  $("#bank-title").textContent = lista.length ? `${lista.length} receita${lista.length > 1 ? "s" : ""} para você` : "Receitas para você";
+  document.querySelectorAll("#missing-filter button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.max === maxFaltando)));
+  $("#bank-list").innerHTML = lista.length ? lista.map(x => cardHTML(x.r)).join("") :
+    `<div class="empty"><strong>${ingredientes.length ? "Nenhuma receita com esse filtro" : "Adicione ingredientes para começar"}</strong>
+     <span>${ingredientes.length ? "Tente “Todas” ou adicione mais ingredientes." : "Digite o que tem em casa ou toque nas sugestões."}</span>
+     </div>`;
+}
+function renderAI_web() {
+  const P = ["Vegetariana", "Sem lactose", "Sem glúten", "Até 30 min", "Leve", "Para crianças", "Doce", "Para 1 pessoa"];
+  $("#prefs").innerHTML = P.map(p => `<button type="button" class="pref" aria-pressed="${prefs.has(p)}" data-pref="${esc(p)}">${esc(p)}</button>`).join("");
+  $("#ai-list").innerHTML = aiReceitas.map(r => cardHTML(r)).join("");
+}
+function renderFavs() {
+  const lista = Object.values(favoritos).sort((a, b) => (b.salvaEm || 0) - (a.salvaEm || 0));
+  const n = lista.length;
+  $("#fav-count").hidden = !n; $("#fav-count").textContent = n;
+  $("#fav-list").innerHTML = n ? lista.map(f => cardHTML(f.ia ? f : (RECEITAS.find(r => r.id === f.id) || f))).join("") :
+    `<div class="empty"><strong>Nenhuma favorita ainda</strong><span>Abra uma receita e toque em “Salvar nas favoritas”. Ela fica guardada neste aparelho.</span></div>`;
+}
+function renderAll() { renderChips(); renderBank(); renderAI(); renderFavs(); if (aberta) renderSheet(); }
+
+// ---------- Painel da receita ----------
+let aberta = null;
+function findRecipe(id) { return RECEITAS.find(r => r.id === id) || aiReceitas.find(r => r.id === id) || favoritos[id]; }
+function openRecipe(id) { aberta = id; renderSheet(); $("#sheet-wrap").hidden = false; document.body.style.overflow = "hidden"; $("#sheet").scrollTop = 0; $("#sheet-close")?.focus(); }
+function closeRecipe() { aberta = null; $("#sheet-wrap").hidden = true; document.body.style.overflow = ""; }
+function renderSheet() {
+  const r = findRecipe(aberta); if (!r) return closeRecipe();
+  const fav = !!favoritos[r.id];
+  let ingHTML;
+  if (r.ia) {
+    ingHTML = r.ingredientes.map(i => `<li><span class="mark ${i.tenho ? "have" : "need"}">${i.tenho ? "✓" : "+"}</span><span>${esc(i.t)}</span>${i.tenho ? "" : '<span class="tag">comprar</span>'}</li>`).join("");
+  } else {
+    const a = analisar(r);
+    ingHTML = a.itens.map(i => `<li><span class="mark ${i.tem ? (i.b ? "basic" : "have") : "need"}">${i.tem ? "✓" : "+"}</span><span>${esc(i.t)}</span>${i.tem ? "" : '<span class="tag">falta</span>'}</li>`).join("");
+  }
+  const passos = (r.ia ? r.passos : r.passos).map(p => `<li><span>${esc(p)}</span></li>`).join("");
+  const rating = r.ia ? null : ratingInfo(r.id);
+  const minha = minhasNotas[r.id] || 0;
+  const rateBlock = !db ? "" : r.ia ? `<p class="note">Receita criada pela IA a partir dos seus ingredientes. Calorias e tempo são estimativas.</p>` : `
+    <div class="rate">
+      <div class="section-head"><strong>Já fez essa receita?</strong><span class="small muted">${rating ? `${fmt(rating.media)} ★ · ${rating.n} avaliaç${rating.n > 1 ? "ões" : "ão"}` : "Ainda sem avaliações"}</span></div>
+      ${db && uid && canVote ? `<div class="rate-stars" role="group" aria-label="Sua nota">${[1,2,3,4,5].map(n => `<button type="button" data-rate="${n}" class="${n <= minha ? "on" : ""}" aria-label="${n} estrela${n > 1 ? "s" : ""}"><svg><use href="#i-star"/></svg></button>`).join("")}</div>
+      <span class="small muted">${minha ? "Sua nota foi registrada. Toque para mudar." : "Dê sua nota e ajude outras pessoas a escolher."}</span>`
+      : `<span class="small muted">As notas vêm de quem já cozinhou pelo app. Para avaliar, abra o app com sua conta Claude.</span>`}
+    </div>`;
+  $("#sheet").innerHTML = `
+    <div class="sheet-top"><span class="grabber"></span>
+      ${r.ia ? '<span class="badge ai">Criada por IA</span>' : `<span class="badge">${CAT[r.cat][0]}</span>`}
+      <button class="icon-btn" id="sheet-close" type="button" aria-label="Fechar"><svg><use href="#i-close"/></svg></button></div>
+    <div class="block" style="gap:8px"><h2 id="sheet-title">${esc(r.nome)}</h2>${r.desc ? `<p class="desc">${esc(r.desc)}</p>` : ""}</div>
+    <div class="stats">
+      <div class="stat"><b>${r.porcoes}</b><span>Porções</span></div>
+      <div class="stat"><b>${tempoTxt(r.tempo)}</b><span>Tempo</span></div>
+      <div class="stat"><b style="font-size:17px">${esc(r.dif)}</b><span>Dificuldade</span></div>
+      <div class="stat"><b>${r.kcal}</b><span>kcal/porção</span></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn ${fav ? "btn-ghost" : "btn-primary"}" type="button" data-fav="${esc(r.id)}"><svg width="18" height="18"><use href="#${fav ? "i-heart-f" : "i-heart"}"/></svg>${fav ? "Salva nas favoritas" : "Salvar nas favoritas"}</button>
+    </div>
+    <div class="block"><h3>Ingredientes</h3><ul class="ing-list">${ingHTML}</ul></div>
+    <div class="block"><h3>Modo de preparo</h3><ol class="steps">${passos}</ol></div>
+    ${rateBlock}
+    <p class="small muted" style="margin:0">Calorias aproximadas por porção, calculadas a partir dos ingredientes.</p>`;
+}
+function toggleFav(id) {
+  const r = findRecipe(id);
+  if (favoritos[id]) { delete favoritos[id]; toast("Removida das favoritas"); }
+  else { favoritos[id] = { ...(r.ia ? r : { id: r.id, nome: r.nome, cat: r.cat, porcoes: r.porcoes, tempo: r.tempo, dif: r.dif, kcal: r.kcal }), salvaEm: Date.now() }; toast("Salva neste aparelho"); }
+  store.set("cq-favoritos", favoritos); renderAll();
+}
+
+// Versão das lojas: sem servidor (IA e avaliações chegam numa próxima versão).
+function rate() {}
+function renderAI() {}
+
+// ---------- Eventos ----------
+$("#add-form").addEventListener("submit", e => { e.preventDefault(); const v = $("#ing-input").value.trim(); if (v) { addIngrediente(v); $("#ing-input").value = ""; } });
+$("#chips").addEventListener("click", e => { const b = e.target.closest("[data-i]"); if (b) { ingredientes.splice(+b.dataset.i, 1); saveIngs(); renderAll(); } });
+$("#quick").addEventListener("click", e => { const b = e.target.closest("[data-q]"); if (b) addIngrediente(b.dataset.q); });
+$("#basics").addEventListener("change", e => { basicos = e.target.checked; store.set("cq-basicos", basicos); renderAll(); });
+$("#clear").addEventListener("click", () => { ingredientes = []; saveIngs(); renderAll(); $("#ing-input").focus(); });
+$("#missing-filter").addEventListener("click", e => { const b = e.target.closest("[data-max]"); if (b) { maxFaltando = +b.dataset.max; renderBank(); } });
+$("#sort").addEventListener("change", e => { ordem = e.target.value; renderBank(); });
+function setTab(t) { $("#tab-cook").setAttribute("aria-selected", t === "cook"); $("#tab-favs").setAttribute("aria-selected", t === "favs"); $("#view-cook").hidden = t !== "cook"; $("#view-favs").hidden = t !== "favs"; window.scrollTo(0, 0); }
+$("#tab-cook").addEventListener("click", () => setTab("cook"));
+$("#tab-favs").addEventListener("click", () => setTab("favs"));
+document.addEventListener("click", e => {
+  const o = e.target.closest("[data-open]"); if (o) return openRecipe(o.dataset.open);
+  const f = e.target.closest("[data-fav]"); if (f) return toggleFav(f.dataset.fav);
+  const r = e.target.closest("[data-rate]"); if (r) return rate(aberta, +r.dataset.rate);
+  if (e.target.closest("#sheet-close") || e.target === $("#sheet-wrap")) closeRecipe();
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && aberta) closeRecipe(); });
+
+// ---------- Instalação (app web) ----------
+const nativo = !!window.Capacitor?.isNativePlatform?.();
+const instalado = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+if (!nativo && "serviceWorker" in navigator && window.isSecureContext) navigator.serviceWorker.register("sw.js").catch(() => {});
+let pedidoInstalacao = null;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+if (!nativo && !instalado) {
+  addEventListener("beforeinstallprompt", e => { e.preventDefault(); pedidoInstalacao = e; $("#install").hidden = false; });
+  if (isIOS) $("#install").hidden = false;
+}
+addEventListener("appinstalled", () => { $("#install").hidden = true; toast("App instalado na tela inicial"); });
+$("#install").addEventListener("click", async () => {
+  if (pedidoInstalacao) { pedidoInstalacao.prompt(); const r = await pedidoInstalacao.userChoice.catch(() => null); if (r?.outcome === "accepted") $("#install").hidden = true; pedidoInstalacao = null; }
+  else if (isIOS) $("#ios-tip").hidden = false;
+});
+$("#ios-tip-close").addEventListener("click", () => { $("#ios-tip").hidden = true; });
+
+renderAll();
+</script>
+
+</body>
+</html>
